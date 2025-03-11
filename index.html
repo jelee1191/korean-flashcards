@@ -51,7 +51,8 @@
 
         function populateChapterDropdown() {
             const chapterSelect = document.getElementById("chapterSelect");
-            const chapters = Array.from(new Set(vocabList.map(item => item.Chapter)));
+            chapterSelect.innerHTML = "";
+            const chapters = Array.from(new Set(vocabList.map(item => item.Chapter))).filter(c => c && c.trim() !== "");
             chapters.sort();
 
             const allOption = document.createElement("option");
@@ -66,7 +67,9 @@
                 chapterSelect.appendChild(option);
             });
 
-            chapterSelect.value = chapters.includes("Chapter 1: Basic Greetings and Essentials") ? "Chapter 1: Basic Greetings and Essentials" : chapters[0];
+            // Default to Chapter 1 if available, otherwise first available chapter
+            const defaultChapter = chapters.find(c => c.includes("Chapter 1")) || chapters[0];
+            chapterSelect.value = defaultChapter;
         }
 
         function updateDirection() {
@@ -132,4 +135,3 @@
     </script>
 </body>
 </html>
-
