@@ -19,11 +19,15 @@
         <h2>Practice</h2>
         <div class="center">
             <label>
-                <input type="radio" name="direction" value="korean" checked> Korean
+                <input type="radio" name="direction" value="korean" checked> Show Korean First
             </label>
             <label>
-                <input type="radio" name="direction" value="english"> English
+                <input type="radio" name="direction" value="english"> Show English First
             </label>
+        </div>
+        <div class="center" style="margin-top: 20px;">
+            <label for="chapterSelect">Select Chapter:</label>
+            <select id="chapterSelect"></select>
         </div>
         <div class="flashcard" id="cardDisplay">Click "Next Card" to start</div>
         <div class="center">
@@ -34,6 +38,7 @@
 
     <script>
         let vocabList = [];
+        let filteredList = [];
         let currentCard = null;
         let showingFront = true;
         let currentDirection = "korean";
@@ -41,15 +46,41 @@
         async function loadVocabFromSheet() {
             const response = await fetch("https://script.google.com/macros/s/AKfycbzPzXRhip06Q7AxD7KvhDEQbdCTjU2ZwSLyrXpn9hAh3DnnHMv9-UOr5YPV_gm7zT5xiQ/exec");
             vocabList = await response.json();
+            populateChapterDropdown();
         }
 
-        function displayStatus(message) {
-            document.getElementById("cardDisplay").textContent = message;
+        function populateChapterDropdown() {
+            const chapterSelect = document.getElementById("chapterSelect");
+            const chapters = Array.from(new Set(vocabList.map(item => item.Chapter)));
+            chapters.sort();
+
+            const allOption = document.createElement("option");
+            allOption.value = "All Chapters";
+            allOption.textContent = "All Chapters";
+            chapterSelect.appendChild(allOption);
+
+            chapters.forEach(chapter => {
+                const option = document.createElement("option");
+                option.value = chapter;
+                option.textContent = chapter;
+                chapterSelect.appendChild(option);
+            });
+
+            chapterSelect.value = chapters.includes("Chapter 1: Basic Greetings and Essentials") ? "Chapter 1: Basic Greetings and Essentials" : chapters[0];
         }
 
         function updateDirection() {
             const selected = document.querySelector('input[name="direction"]:checked');
             currentDirection = selected ? selected.value : "korean";
+        }
+
+        function filterVocabByChapter() {
+            const selectedChapter = document.getElementById("chapterSelect").value;
+            if (selectedChapter === "All Chapters") {
+                filteredList = vocabList;
+            } else {
+                filteredList = vocabList.filter(item => item.Chapter === selectedChapter);
+            }
         }
 
         function nextCard() {
@@ -59,14 +90,21 @@
             }
 
             updateDirection();
-            const index = Math.floor(Math.random() * vocabList.length);
-            currentCard = vocabList[index];
+            filterVocabByChapter();
+
+            if (filteredList.length === 0) {
+                displayStatus("No flashcards in selected chapter.");
+                return;
+            }
+
+            const index = Math.floor(Math.random() * filteredList.length);
+            currentCard = filteredList[index];
             showingFront = true;
 
             if (currentDirection === "korean") {
-                displayStatus(currentCard.korean);
+                displayStatus(currentCard.Korean);
             } else {
-                displayStatus(currentCard.english);
+                displayStatus(currentCard.English);
             }
         }
 
@@ -75,18 +113,23 @@
             showingFront = !showingFront;
 
             if (currentDirection === "korean") {
-                displayStatus(showingFront ? currentCard.korean : currentCard.english);
+                displayStatus(showingFront ? currentCard.Korean : currentCard.English);
             } else {
-                displayStatus(showingFront ? currentCard.english : currentCard.korean);
+                displayStatus(showingFront ? currentCard.English : currentCard.Korean);
             }
+        }
+
+        function displayStatus(message) {
+            document.getElementById("cardDisplay").textContent = message;
         }
 
         // Load data on page load
         window.onload = async () => {
             displayStatus("Loading flashcards...");
             await loadVocabFromSheet();
-            displayStatus("Flashcards loaded. Click 'Next Card' to begin.");
+            displayStatus("Flashcards loaded. Select chapter and click 'Next Card' to begin.");
         };
     </script>
 </body>
 </html>
+
